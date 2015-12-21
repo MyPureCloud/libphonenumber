@@ -12,6 +12,12 @@ https://github.com/Bluefieldscom/intl-tel-input
 + A jQuery plugin for entering and validating international telephone numbers
 + Also exposes some handy helper methods.
 
+To Update
+--------
+Copy the contents of the two build files into libphonenumber. You will have to reconcile some differences (i.e., duplicate import statements and ensuring unique method names)
+  1. [intl-tel-input/utils.js](https://github.com/jackocnr/intl-tel-input/blob/master/lib/libphonenumber/src/utils.js).
+  2. [nathanhammond/libphonenumber.js](https://github.com/nathanhammond/libphonenumber/blob/master/libphonenumber.js)
+
 To Build
 --------
 Just run the ``build.sh`` file and make sure you have svn, git and ant installed.
