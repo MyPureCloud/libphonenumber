@@ -29,16 +29,20 @@ This library adds the global `phoneUtils` with the following methods:
 
 ```js
 // exports by nathanhammond/libphonenumber
-goog.exportSymbol('phoneUtils.isPossibleNumber', isPossibleNumber);
-goog.exportSymbol('phoneUtils.isPossibleNumberWithReason', isPossibleNumberWithReason);
-goog.exportSymbol('phoneUtils.isValidNumber', isNumberValid);
-goog.exportSymbol('phoneUtils.isValidNumberForRegion', isValidNumberForRegion);
-goog.exportSymbol('phoneUtils.getRegionCodeForNumber', getRegionCodeForNumber);
-goog.exportSymbol('phoneUtils.formatE164', formatE164);
-goog.exportSymbol('phoneUtils.formatNational', formatNational);
-goog.exportSymbol('phoneUtils.formatInternational', formatInternational);
-goog.exportSymbol('phoneUtils.formatInOriginalFormat', formatInOriginalFormat);
-goog.exportSymbol('phoneUtils.formatOutOfCountryCallingNumber', formatOutOfCountryCallingNumber);
+phoneUtils.countryCodeToRegionCodeMap();
+phoneUtils.isPossibleNumber(phoneNumber, regionCode);
+phoneUtils.isPossibleNumberWithReason(phoneNumber, regionCode);
+phoneUtils.isValidNumber(phoneNumber, regionCode);
+phoneUtils.isValidNumberForRegion(phoneNumber, regionCode);
+phoneUtils.getCountryCodeForRegion(regionCode);
+phoneUtils.getRegionCodeForNumber(phoneNumber, regionCode);
+phoneUtils.getNumberType(phoneNumber, regionCode);
+phoneUtils.getSupportedRegions();
+phoneUtils.formatE164(phoneNumber, regionCode);
+phoneUtils.formatNational(phoneNumber, regionCode);
+phoneUtils.formatInternational(phoneNumber, regionCode);
+phoneUtils.formatInOriginalFormat(phoneNumber, regionCode);
+phoneUtils.formatOutOfCountryCallingNumber(phoneNumber, regionCode, target);
 
 // exports by intl-tel-input
 goog.exportSymbol('intlTelInputUtils', {});
@@ -51,4 +55,5 @@ goog.exportSymbol('intlTelInputUtils.isValidNumber', isValidNumber);
 goog.exportSymbol('intlTelInputUtils.numberType', numberType);
 goog.exportSymbol('intlTelInputUtils.validationError', validationError);
 goog.exportSymbol('intlTelInputUtils.numberFormat', numberFormat);
+
 ```
