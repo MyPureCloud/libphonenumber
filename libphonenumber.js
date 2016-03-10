@@ -1,19 +1,100 @@
-// This file exports modules and helpers needed by these two custom libphonenumber builds:
-// https://github.com/Bluefieldscom/intl-tel-input
-// https://github.com/nathanhammond/libphonenumber
 
-// Required by intl-tel-input https://github.com/Bluefieldscom/intl-tel-input
-// see https://github.com/Bluefieldscom/intl-tel-input/blob/master/lib/libphonenumber/src/utils.js
-goog.require('i18n.phonenumbers.AsYouTypeFormatter');
+// START: libphonenumber
+
+// TODO: Add this back in as a feature:
+// goog.require('i18n.phonenumbers.AsYouTypeFormatter');
 goog.require('i18n.phonenumbers.PhoneNumberFormat');
-goog.require('i18n.phonenumbers.PhoneNumberUtil');
-
-// Used by libphonenumber https://github.com/nathanhammond/libphonenumber
-// see https://github.com/nathanhammond/libphonenumber/blob/master/libphonenumber.js
 goog.require('i18n.phonenumbers.PhoneNumberType');
+goog.require('i18n.phonenumbers.PhoneNumberUtil');
 goog.require('i18n.phonenumbers.PhoneNumberUtil.ValidationResult');
 
-// begin intl-tel-input --------------------------------------------//
+var phoneUtil = i18n.phonenumbers.PhoneNumberUtil.getInstance();
+
+function countryCodeToRegionCodeMap() {
+  return i18n.phonenumbers.metadata.countryCodeToRegionCodeMap;
+}
+
+function isPossibleNumber(phoneNumber, regionCode) {
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.isPossibleNumber(number);
+}
+
+function isPossibleNumberWithReason(phoneNumber, regionCode) {
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.isPossibleNumberWithReason(number);
+}
+
+function isValidNumberForRegion(phoneNumber, regionCode) {
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.isValidNumberForRegion(number, regionCode);
+}
+
+function getCountryCodeForRegion(regionCode) {
+  regionCode = regionCode || "us";
+  return phoneUtil.getCountryCodeForRegion(regionCode);
+}
+
+function getRegionCodeForNumber(phoneNumber, regionCode) {
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.getRegionCodeForNumber(number);
+}
+
+function getSupportedRegions() {
+  return phoneUtil.getSupportedRegions();
+}
+
+function formatE164(phoneNumber, regionCode) {
+  var PNF = i18n.phonenumbers.PhoneNumberFormat;
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.format(number, PNF.E164);
+}
+
+function formatNational(phoneNumber, regionCode) {
+  var PNF = i18n.phonenumbers.PhoneNumberFormat;
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.format(number, PNF.NATIONAL);
+}
+
+function formatInternational(phoneNumber, regionCode) {
+  var PNF = i18n.phonenumbers.PhoneNumberFormat;
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.format(number, PNF.INTERNATIONAL);
+}
+
+function formatInOriginalFormat(phoneNumber, regionCode) {
+  regionCode = regionCode || "us";
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.formatInOriginalFormat(number, regionCode);
+}
+
+function formatOutOfCountryCallingNumber(phoneNumber, regionCode, target) {
+  if (!target) { return; }
+  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
+  return phoneUtil.formatOutOfCountryCallingNumber(number, target);
+}
+
+// END: libphonenumber
+
+// START: intl-tel-input
+
+// format the given number to the given format
+function formatNumber(number, countryCode, format) {
+  try {
+    var phoneUtil = i18n.phonenumbers.PhoneNumberUtil.getInstance();
+    var numberObj = phoneUtil.parseAndKeepRawInput(number, countryCode);
+    format = (typeof format == "undefined") ? i18n.phonenumbers.PhoneNumberFormat.E164 : format;
+    return phoneUtil.format(numberObj, format);
+  } catch (e) {
+    return number;
+  }
+}
 
 // get an example number for the given country code
 function getExampleNumber(countryCode, national, numberType) {
@@ -27,30 +108,28 @@ function getExampleNumber(countryCode, national, numberType) {
   }
 }
 
-// format the given number to the given type
-function formatNumberByType(number, countryCode, type) {
+// get the extension from the given number
+function getExtension(number, countryCode) {
   try {
     var phoneUtil = i18n.phonenumbers.PhoneNumberUtil.getInstance();
     var numberObj = phoneUtil.parseAndKeepRawInput(number, countryCode);
-    type = (typeof type == "undefined") ? i18n.phonenumbers.PhoneNumberFormat.E164 : type;
-    return phoneUtil.format(numberObj, type);
+    return numberObj.getExtension();
   } catch (e) {
     return "";
   }
 }
 
-
-// check if given number is valid
-function isValidNumber(number, countryCode) {
+// get the type of the given number e.g. fixed-line/mobile
+function getNumberType(number, countryCode) {
   try {
     var phoneUtil = i18n.phonenumbers.PhoneNumberUtil.getInstance();
     var numberObj = phoneUtil.parseAndKeepRawInput(number, countryCode);
-    return phoneUtil.isValidNumber(numberObj);
+    return phoneUtil.getNumberType(numberObj);
   } catch (e) {
-    return false;
+    // broken
+    return -99;
   }
 }
-
 
 // get more info if the validation has failed e.g. too long/too short
 function getValidationError(number, countryCode) {
@@ -81,83 +160,25 @@ function getValidationError(number, countryCode) {
 }
 
 
-// format the given number (optionally add any formatting suffix e.g. a hyphen)
-function formatNumber(val, countryCode, addSuffix, allowExtension, isAllowedKey) {
-  try {
-    var clean = val.replace(/\D/g, ""),
-      // NOTE: we use AsYouTypeFormatter because the default format function can't handle incomplete numbers e.g. "+17024" formats to "+1 7024" as opposed to "+1 702-4"
-      formatter = new i18n.phonenumbers.AsYouTypeFormatter(countryCode),
-      // if clean is empty, we still need this to be a string otherwise we get errors later
-      result = "",
-      next,
-      extSuffix = " ext. ";
-
-    if (val.substr(0, 1) == "+") {
-      clean = "+" + clean;
-    }
-
-
-
-    // got through the clean number, formatting as we go (keeping an eye out for where the extension starts, if there is one)
-    for (var i = 0; i < clean.length; i++) {
-      // TODO: improve this so don't just pump in every digit every time - we should just cache this formatter object, and just call inputDigit once each time the user enters a new digit
-      next = formatter.inputDigit(clean.charAt(i));
-
-      if (allowExtension && result && next.length <= result.length && next.indexOf(" ") == -1 && getValidationError(clean.substring(0, i - 1), countryCode) != i18n.phonenumbers.PhoneNumberUtil.ValidationResult.TOO_SHORT) {
-        // if we're allowing extensions and adding this digit didn't change the length, or made it smaller (and there's no longer any spaces), and the number is not TOO_SHORT: that means the number was no longer a potentially valid number, so assume the rest is the extension
-        return result + extSuffix + clean.substring(i, clean.length);
-      }
-      result = next;
-    }
-    // for some reason libphonenumber formats "+44" to "+44 ", but doesn't do the same with "+1"
-    if (result.charAt(result.length - 1) == " ") {
-      result = result.substr(0, result.length - 1);
-    }
-
-
-
-    // try adding one more (fake) digit to determine if we should add a formatting suffix, or an ext suffix
-    if (addSuffix && !val.split(extSuffix)[1]) {
-      // hack to get formatting suffix
-      var test = formatter.inputDigit('5');
-      // again the "+44 " problem... (also affects "+45" apparently)
-      if (test.charAt(test.length - 1) == " ") {
-        test = test.substr(0, test.length - 1);
-      }
-      // we want to know if adding a '5' introduced a formatting char, so we check if the penultimate char (the one before this new '5') is not-a-number
-      var penultimate = test.substr(test.length - 2, 1);
-      // Note: never use isNaN without parseFloat
-      if (isNaN(parseFloat(penultimate))) {
-        // return the new value (minus that last '5' we just added)
-        return test.substr(0, test.length - 1);
-      } else if (allowExtension && result && test.length <= result.length && test.indexOf(" ") == -1 && getValidationError(clean.substring(0, i - 1), countryCode) != i18n.phonenumbers.PhoneNumberUtil.ValidationResult.TOO_SHORT && !isAllowedKey) {
-        // else check for the case where the user already had a full valid number, and they have just hit space or 'e' (etc.) to try and add an extension - in which case we add the ext suffix.
-        //
-        // so we check if we're allowing extensions, and if adding this extra '5' to the number broke the formatting, and the number is not TOO_SHORT (i.e. they already have a full valid number), AND this is not an allowed key
-        //
-        // NOTE: we don't automatically add the ext suffix when the user finishes typing a full valid number - only when they add an extra digit (this situation is caught in the initial loop above), or if they try typing the ext suffix themselves (hance the check that this was not an allowed key)
-        return result + extSuffix;
-      }
-    }
-
-    return result;
-  } catch (e) {
-    return val;
-  }
-}
-
-
-// get the type of the given number e.g. fixed-line/mobile
-function getNumberType(number, countryCode) {
+// check if given number is valid
+function isValidNumber(number, countryCode) {
   try {
     var phoneUtil = i18n.phonenumbers.PhoneNumberUtil.getInstance();
     var numberObj = phoneUtil.parseAndKeepRawInput(number, countryCode);
-    return phoneUtil.getNumberType(numberObj);
+    return phoneUtil.isValidNumber(numberObj);
   } catch (e) {
-    // broken
-    return -99;
+    return false;
   }
 }
+
+
+// copied this from https://github.com/googlei18n/libphonenumber/blob/master/javascript/i18n/phonenumbers/phonenumberutil.js#L883
+var numberFormat = {
+  "E164": 0,
+  "INTERNATIONAL": 1,
+  "NATIONAL": 2,
+  "RFC3966": 3
+};
 
 
 // copied this from i18n.phonenumbers.PhoneNumberType in https://code.google.com/p/libphonenumber/source/browse/trunk/javascript/i18n/phonenumbers/phonenumberutil.js and put the keys in quotes to force closure compiler to preserve the keys
@@ -204,107 +225,33 @@ var validationError = {
   "NOT_A_NUMBER": 4
 };
 
-// copied this from https://github.com/googlei18n/libphonenumber/blob/master/javascript/i18n/phonenumbers/phonenumberutil.js#L883
-var numberFormat = {
-  "E164": 0,
-  "INTERNATIONAL": 1,
-  "NATIONAL": 2,
-  "RFC3966": 3
-};
+// END: intl-tel-input
 
-// end intl-tel-input --------------------------------------------//
-
-// begin libphonenumber  -----------------------------------------//
-
-var phoneUtil = i18n.phonenumbers.PhoneNumberUtil.getInstance();
-
-function isPossibleNumber(phoneNumber, regionCode) {
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.isPossibleNumber(number);
-}
-
-function isPossibleNumberWithReason(phoneNumber, regionCode) {
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.isPossibleNumberWithReason(number);
-}
-
-function isNumberValid(phoneNumber, regionCode) {
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.isValidNumber(number);
-}
-
-function isValidNumberForRegion(phoneNumber, regionCode) {
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.isValidNumberForRegion(number, regionCode);
-}
-
-function getRegionCodeForNumber(phoneNumber, regionCode) {
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.getRegionCodeForNumber(number);
-}
-
-function formatE164(phoneNumber, regionCode) {
-  var PNF = i18n.phonenumbers.PhoneNumberFormat;
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.format(number, PNF.E164);
-}
-
-function formatNational(phoneNumber, regionCode) {
-  var PNF = i18n.phonenumbers.PhoneNumberFormat;
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.format(number, PNF.NATIONAL);
-}
-
-function formatInternational(phoneNumber, regionCode) {
-  var PNF = i18n.phonenumbers.PhoneNumberFormat;
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.format(number, PNF.INTERNATIONAL);
-}
-
-function formatInOriginalFormat(phoneNumber, regionCode) {
-  regionCode = regionCode || "us";
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.formatInOriginalFormat(number, regionCode);
-}
-
-function formatOutOfCountryCallingNumber(phoneNumber, regionCode, target) {
-  if (!target) { return; }
-  var number = phoneUtil.parseAndKeepRawInput(phoneNumber, regionCode);
-  return phoneUtil.formatOutOfCountryCallingNumber(number, target);
-}
-
-// end libphonenumber  -----------------------------------------//
-
-// exports by libphonenumber
+// EXPORTS: libphonenumber
+goog.exportSymbol('phoneUtils.countryCodeToRegionCodeMap', countryCodeToRegionCodeMap);
 goog.exportSymbol('phoneUtils.isPossibleNumber', isPossibleNumber);
 goog.exportSymbol('phoneUtils.isPossibleNumberWithReason', isPossibleNumberWithReason);
-goog.exportSymbol('phoneUtils.isValidNumber', isNumberValid);
+goog.exportSymbol('phoneUtils.isValidNumber', isValidNumber);
 goog.exportSymbol('phoneUtils.isValidNumberForRegion', isValidNumberForRegion);
+goog.exportSymbol('phoneUtils.getCountryCodeForRegion', getCountryCodeForRegion);
 goog.exportSymbol('phoneUtils.getRegionCodeForNumber', getRegionCodeForNumber);
+goog.exportSymbol('phoneUtils.getNumberType', getNumberType);
+goog.exportSymbol('phoneUtils.getSupportedRegions', getSupportedRegions);
 goog.exportSymbol('phoneUtils.formatE164', formatE164);
 goog.exportSymbol('phoneUtils.formatNational', formatNational);
 goog.exportSymbol('phoneUtils.formatInternational', formatInternational);
 goog.exportSymbol('phoneUtils.formatInOriginalFormat', formatInOriginalFormat);
 goog.exportSymbol('phoneUtils.formatOutOfCountryCallingNumber', formatOutOfCountryCallingNumber);
 
-// exports by intl-tel-input
-// exports
+// EXPORTS: intl-tel-input
 goog.exportSymbol('intlTelInputUtils', {});
 goog.exportSymbol('intlTelInputUtils.formatNumber', formatNumber);
-goog.exportSymbol('intlTelInputUtils.formatNumberByType', formatNumberByType);
 goog.exportSymbol('intlTelInputUtils.getExampleNumber', getExampleNumber);
+goog.exportSymbol('intlTelInputUtils.getExtension', getExtension);
 goog.exportSymbol('intlTelInputUtils.getNumberType', getNumberType);
 goog.exportSymbol('intlTelInputUtils.getValidationError', getValidationError);
 goog.exportSymbol('intlTelInputUtils.isValidNumber', isValidNumber);
 // enums
+goog.exportSymbol('intlTelInputUtils.numberFormat', numberFormat);
 goog.exportSymbol('intlTelInputUtils.numberType', numberType);
 goog.exportSymbol('intlTelInputUtils.validationError', validationError);
-goog.exportSymbol('intlTelInputUtils.numberFormat', numberFormat);
